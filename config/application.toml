@@ -1,0 +1,11 @@
+
+[app_monitor]
+monitor_update_frequency = 20                   # Update frequency in Hz
+ui_data_packet_size = 107                       # Number of elements in the data packet (87 for ui data only, 107 for full data)
+ui_secret = "${ITS_CONTROL_UI_SECRET}"          # Secret key for Flask app
+html_template_filename = "index.html" # HTML template file for Flask app
+serial_baudrate = 115200                        # Baudrate for serial communication
+ui_port = 5000                                  # Port for Flask app
+
+[joystick]
+update_frequency = 100 # Update frequency in Hz

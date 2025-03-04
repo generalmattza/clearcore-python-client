@@ -1,0 +1,88 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  detailed:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  minimal:
+    format: "%(asctime)s: %(message)s"
+
+filters:
+  sent_filter:
+    (): logger.StringFilter
+    match: "SENT"
+  recvd_filter:
+    (): logger.StringFilter
+    match: "RECVD"
+
+handlers:
+
+  main:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: detailed
+    filename: log/main.info.log
+    maxBytes: 10485760
+    backupCount: 10
+
+  threadsafe_serial:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: detailed
+    filename: log/threadsafe_serial.log
+    maxBytes: 10485760
+    backupCount: 10
+
+  threadsafe_serial_sent:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: minimal
+    filename: log/threadsafe_serial.sent.log
+    filters: [sent_filter]
+    maxBytes: 10485760
+    backupCount: 10
+
+  threadsafe_serial_recvd:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: minimal
+    filename: log/threadsafe_serial.recvd.log
+    filters: [recvd_filter]
+    maxBytes: 10485760
+    backupCount: 10
+
+  app_monitor:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: detailed
+    filename: log/app_monitor.log
+    maxBytes: 10485760
+    backupCount: 10
+
+  app_monitor_debug:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: minimal
+    filename: log/app_monitor.debug.log
+    maxBytes: 10485760
+    backupCount: 10
+
+loggers:
+  main:
+    level: DEBUG
+    handlers: [main]
+    propagate: false
+
+  threadsafe_serial:
+    level: DEBUG
+    handlers: [threadsafe_serial, threadsafe_serial_sent, threadsafe_serial_recvd]
+    propagate: false
+
+  app_monitor:
+    level: DEBUG
+    handlers: [app_monitor, app_monitor_debug]
+    propagate: false
+
+root:
+  level: DEBUG
+  handlers: []
