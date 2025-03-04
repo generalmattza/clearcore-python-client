@@ -1,5 +1,0 @@
-python-threadsafe-serial@ git+https://github.com/generalmattza/python-threadsafe-serial.git
-remote-app-monitor@ git+https://github.com/generalmattza/remote-app-monitor.git
-
-[test]
-pytest>=7.1.1
