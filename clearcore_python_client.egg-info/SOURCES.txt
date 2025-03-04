@@ -1,0 +1,6 @@
+pyproject.toml
+clearcore_python_client.egg-info/PKG-INFO
+clearcore_python_client.egg-info/SOURCES.txt
+clearcore_python_client.egg-info/dependency_links.txt
+clearcore_python_client.egg-info/requires.txt
+clearcore_python_client.egg-info/top_level.txt
