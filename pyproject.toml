@@ -26,7 +26,7 @@ classifiers = [
 
 dependencies = [
     "python-threadsafe-serial @ git+https://github.com/generalmattza/python-threadsafe-serial.git",
-    "remote-app-monitor @ git+https://github.com/generalmattza/remote-app-monitor.git",
+    "remote-app-monitor",
 ]
 
 # Use this line if your project comprises of modules only without any ./src/* files
@@ -38,6 +38,9 @@ test = ["pytest >= 7.1.1"]
 
 
 [tool.pytest.ini_options]
+
+[tool.uv.sources]
+remote-app-monitor = { git = "https://github.com/generalmattza/remote-app-monitor.git" }
 #addopts = "--maxfail=1 -s"
 #console_output_style = "progress"
 #log_cli = false

@@ -37,7 +37,7 @@ dictConfig(logging_config)
 
 def create_serial_thread():
     threadsafe_serial = ThreadSafeSerial(
-        port="COM6",
+        port="COM10",
         baudrate=115200,
         timeout=3,
     )
@@ -47,7 +47,7 @@ async def main():
     # logging.info(configs["application"])
 
     # Create a MonitorManager instances
-    manager = TerminalManager()
+    manager = TerminalManager(log_to_file_enabled=True)
 
     # Add a progress bar and table elements with formatting
     BAR_WIDTH = 30
@@ -72,7 +72,7 @@ async def main():
         max_value=1000, **axis_properties
     )
     axis_velocity = RangeBar(
-        element_id="velocity", label="Axis Vel", unit="mm/s", min_value=-100,
+        element_id="velocity", label="Axis Vel", unit="mm/min", min_value=-100,
         max_value=100, **axis_properties
     )
     motor_speed = RangeBar(
@@ -89,14 +89,6 @@ async def main():
     )
     motor_status = MotorStatusElement(element_id="status", static_text="Motor Status: ")
     motor_faults = MotorAlertElement(element_id="faults", static_text="Faults: ")
-
-    # logger = LogMonitor(
-    #     element_id="logger",
-    #     timestamp=True,
-    #     timestamp_format="%H:%M:%S.%f",
-    #     # timestamp_significant_digits=3,
-    #     border=True,
-    # )
 
     manager.add_element(position)
     manager.add_element(axis_velocity)
