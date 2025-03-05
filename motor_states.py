@@ -1,7 +1,7 @@
 import asyncio
 from enum import Enum
 from app_monitor import TextElement
-
+from app_monitor.text_formatter import TextFormat
 
 class MotorReadyState(Enum):
     MOTOR_DISABLED = 0
@@ -74,6 +74,20 @@ class MotorStatusElement(TextElement):
         state = MotorReadyState(int(text))
         return super().update(state)
 
+    def display(self):
+        """Render the text element for display."""
+        self.text_format = TextFormat(ansi_enabled=True)
+        if self.text == "DISABLED":
+            self.text_format.fg_color = "red"
+        elif self.text == "FAULTED":
+            self.text_format.fg_color = "yellow"
+        else:
+            self.text_format.fg_color = "green"
+        text = self.text_format.format_text(str(self.text))
+        full_text = (self.static_text or "") + text
+        return (
+            full_text
+        )
 
 class MotorAlertElement(TextElement):
     def __init__(self, *args, **kwargs):
@@ -125,3 +139,41 @@ class MotorAlertElement(TextElement):
             self.start_cycling()
 
         return super().update(self.current_alert)
+    
+
+
+from app_monitor.elements_base import RangeBar
+
+class ColoredRangeBar(RangeBar):
+
+    def display(self):
+        """Render the range bar for display."""
+        progress_ratio = (self.current_value - self.min_value) / (
+            self.max_value - self.min_value
+        )
+        numeric_value = (
+            f"{self.current_value:>{self.max_display_length}.{self.digits}f}"
+        )
+        full_display_value = f"{numeric_value} {self.unit}".ljust(
+            self.max_display_length + len(self.unit)
+        )
+        display_value = (
+            self.text_format.format_text(full_display_value)
+            if self.text_format
+            else full_display_value
+        )
+        bar_width = self.width - self.max_label_length - self.max_display_length - 13
+        marker_position = min(int(bar_width * progress_ratio), bar_width - 1)
+        bar = (
+            self.range_trace * marker_position
+            + self.marker_trace
+            + self.range_trace * (bar_width - marker_position - 1)
+        )
+        self.bar_format = TextFormat(ansi_enabled=True)
+        if abs(progress_ratio) > 0.6:
+            self.bar_format.fg_color = "yellow"
+        if abs(progress_ratio) >= 0.8:
+            self.bar_format.fg_color = "red"
+        formatted_bar = self.bar_format.format_text(bar) if self.bar_format else bar
+        padded_label = self.label.ljust(self.max_label_length)
+        return f"{padded_label} [{formatted_bar}] {display_value}"

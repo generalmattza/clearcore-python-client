@@ -8,8 +8,10 @@
 """a_short_project_description"""
 # ---------------------------------------------------------------------------
 
-from logging.config import dictConfig
+import argparse
 import asyncio
+from datetime import datetime
+from logging.config import dictConfig
 
 # Import the load_configs function
 from config_loader import load_configs
@@ -21,51 +23,72 @@ from app_monitor import (
     SerialUpdateServer,
 )
 from app_monitor.elements_base import IndicatorLamp
-from motor_states import MotorStatusElement, MotorAlertElement
+from motor_states import MotorStatusElement, MotorAlertElement, ColoredRangeBar
 from app_monitor.server import StructDecoder, WindowValidator
 from threadsafe_serial import ThreadSafeSerial
 
 
 LOGGING_CONFIG_FILEPATH = "config/logger.yaml"
-# APP_CONFIG_FILEPATH = "config/application.toml"
 
-# # Load user configurations using the config_loader module
+# Load user configurations using the config_loader module
 logging_config = load_configs(LOGGING_CONFIG_FILEPATH)
 
-# # Configure logging using the specified logging configuration
+# Configure logging using the specified logging configuration
 dictConfig(logging_config)
 
+# Define the default filename for saving control log data
+CONTROL_LOGDATA_FILENAME = f"control_logdata_{datetime.now().strftime(r"%Y%m%d")}.csv"
 
-def create_serial_thread():
+def parse_arguments():
+    """Parse command-line arguments to select the COM port."""
+    parser = argparse.ArgumentParser(description="Monitor application for serial communication.")
+    parser.add_argument(
+        "--port",
+        type=str,
+        required=False,
+        default="COM6",
+        help="Specify the COM port for serial communication (e.g., COM6, /dev/ttyUSB0)."
+    )
+    parser.add_argument(
+        "--file",
+        type=str,
+        required=False,
+        default=CONTROL_LOGDATA_FILENAME,
+        help="Specify the base filename for saving motor data."
+    )
+    return parser.parse_args()
+
+
+def create_serial_thread(port):
+    """Create a ThreadSafeSerial instance with the given port."""
     threadsafe_serial = ThreadSafeSerial(
-        port="COM6",
+        port=port,
         baudrate=115200,
         timeout=3,
     )
     return threadsafe_serial
 
-async def main():
-    # logging.info(configs["application"])
 
-    # Create a MonitorManager instances
+async def main():
+    """Main function for running the application."""
+    args = parse_arguments()  # Get command-line arguments
+
+    # Create a MonitorManager instance
     manager = TerminalManager(log_to_file_enabled=True)
+    manager.init_csv_logger(filename=args.file)
 
     # Add a progress bar and table elements with formatting
     BAR_WIDTH = 30
     text_format = TextFormat(bold=True)
 
-
     # Example instantiation of the RangeBar
     axis_properties = dict(
-        # width=50,  # Total width of the bar (e.g., 50 characters)
-        # bar_format={"fg_color": "green"},  # Custom formatting for the bar (optional)
-        text_format=text_format,  # Custom formatting for the display text (optional)
-        max_label_length=12,  # Maximum length of the label (e.g., 5 characters)
-        max_display_length=5,  # Maximum length of the value (e.g., 5 characters)
+        text_format=text_format,
+        max_label_length=12,
+        max_display_length=5,
         marker_trace="█",
         range_trace="-",
         digits=1,
-        # scale=60 / 6000,
     )
 
     position = RangeBar(
@@ -80,7 +103,7 @@ async def main():
         element_id="motor_speed", label="Motor Speed", unit="rpm", min_value=-1500,
         max_value=1500, **axis_properties
     )
-    axis_torque_current = RangeBar(
+    axis_torque_current = ColoredRangeBar(
         element_id="torque_current", label="Torque", unit="%", min_value=-100,
         max_value=100, **axis_properties
     )
@@ -96,15 +119,14 @@ async def main():
         element_id="torque_command", label="Torque command", unit="-", min_value=0,
         max_value=1, enabled=False, **axis_properties
     )
-    
+
     motor_status = MotorStatusElement(element_id="status", static_text="Motor Status: ")
     up_button = IndicatorLamp(element_id="up_button", label="UP", off_color="grey")
     down_button = IndicatorLamp(element_id="down_button", label="DOWN", off_color="grey")
     clear_faults_button = IndicatorLamp(element_id="clear_faults_button", label="CLEAR FAULTS", off_color="grey")
     zero_axis_button = IndicatorLamp(element_id="zero_axis_button", label="ZERO AXIS", off_color="grey")
     estop_button = IndicatorLamp(element_id="estop_button", label="E-STOP", on_color="red", off_color="grey")
-
-    motor_faults = MotorAlertElement(element_id="faults", static_text="Faults: ")
+    motor_faults = MotorAlertElement(element_id="faults", enabled=False, static_text="Faults: ")
 
     manager.add_element(position)
     manager.add_element(axis_velocity)
@@ -112,6 +134,7 @@ async def main():
     manager.add_element(axis_torque_current)
     manager.add_element(axis_torque_limit)
     manager.add_element(motor_status)
+    manager.add_element(motor_faults)
     manager.add_element(velocity_command)
     manager.add_element(torque_command)
     manager.add_element(up_button)
@@ -119,12 +142,10 @@ async def main():
     manager.add_element(clear_faults_button)
     manager.add_element(zero_axis_button)
     manager.add_element(estop_button)
-    # manager.add_element(motor_faults)
 
-
-    # Create a serial thread
-    serial_thread = create_serial_thread()
-    data_keys = [ 
+    # Create a serial thread with the user-specified COM port
+    serial_thread = create_serial_thread(port=args.port)
+    data_keys = [
         "position",
         "velocity",
         "motor_speed",
