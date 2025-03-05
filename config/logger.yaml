@@ -68,10 +68,6 @@ handlers:
     backupCount: 10
 
 loggers:
-  main:
-    level: DEBUG
-    handlers: [main]
-    propagate: false
 
   threadsafe_serial:
     level: DEBUG
@@ -85,4 +81,4 @@ loggers:
 
 root:
   level: DEBUG
-  handlers: []
+  handlers: [main]

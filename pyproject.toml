@@ -37,10 +37,13 @@ dependencies = [
 test = ["pytest >= 7.1.1"]
 
 
-[tool.pytest.ini_options]
 
 [tool.uv.sources]
 remote-app-monitor = { git = "https://github.com/generalmattza/remote-app-monitor.git" }
+
+
+
+[tool.pytest.ini_options]
 #addopts = "--maxfail=1 -s"
 #console_output_style = "progress"
 #log_cli = false

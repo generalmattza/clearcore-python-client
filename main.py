@@ -20,6 +20,7 @@ from app_monitor import (
     RangeBar,
     SerialUpdateServer,
 )
+from app_monitor.elements_base import IndicatorLamp
 from motor_states import MotorStatusElement, MotorAlertElement
 from app_monitor.server import StructDecoder, WindowValidator
 from threadsafe_serial import ThreadSafeSerial
@@ -37,7 +38,7 @@ dictConfig(logging_config)
 
 def create_serial_thread():
     threadsafe_serial = ThreadSafeSerial(
-        port="COM10",
+        port="COM6",
         baudrate=115200,
         timeout=3,
     )
@@ -87,7 +88,22 @@ async def main():
         element_id="torque_limit", label="Torque Limit", unit="%", min_value=0,
         max_value=100, **axis_properties
     )
+    velocity_command = RangeBar(
+        element_id="velocity_command", label="Velocity command", unit="-", min_value=0,
+        max_value=1, enabled=False, **axis_properties
+    )
+    torque_command = RangeBar(
+        element_id="torque_command", label="Torque command", unit="-", min_value=0,
+        max_value=1, enabled=False, **axis_properties
+    )
+    
     motor_status = MotorStatusElement(element_id="status", static_text="Motor Status: ")
+    up_button = IndicatorLamp(element_id="up_button", label="UP", off_color="grey")
+    down_button = IndicatorLamp(element_id="down_button", label="DOWN", off_color="grey")
+    clear_faults_button = IndicatorLamp(element_id="clear_faults_button", label="CLEAR FAULTS", off_color="grey")
+    zero_axis_button = IndicatorLamp(element_id="zero_axis_button", label="ZERO AXIS", off_color="grey")
+    estop_button = IndicatorLamp(element_id="estop_button", label="E-STOP", on_color="red", off_color="grey")
+
     motor_faults = MotorAlertElement(element_id="faults", static_text="Faults: ")
 
     manager.add_element(position)
@@ -96,9 +112,15 @@ async def main():
     manager.add_element(axis_torque_current)
     manager.add_element(axis_torque_limit)
     manager.add_element(motor_status)
+    manager.add_element(velocity_command)
+    manager.add_element(torque_command)
+    manager.add_element(up_button)
+    manager.add_element(down_button)
+    manager.add_element(clear_faults_button)
+    manager.add_element(zero_axis_button)
+    manager.add_element(estop_button)
     # manager.add_element(motor_faults)
 
-    # manager.add_element(logger)
 
     # Create a serial thread
     serial_thread = create_serial_thread()
@@ -106,16 +128,21 @@ async def main():
         "position",
         "velocity",
         "motor_speed",
-        "torque_limit",
         "torque_current",
+        "torque_limit",
+        "velocity_command",
+        "torque_command",
         "status",
         "faults",
-        "controller_state",
-        "padding"
+        "up_button",
+        "down_button",
+        "clear_faults_button",
+        "zero_axis_button",
+        "estop_button",
     ]
 
-    decoder = StructDecoder(data_keys=data_keys, packet_format="<dddddiiii")
-    validator = WindowValidator(window_size=58, start_byte=0xA5, end_byte=0x5A)
+    validator = WindowValidator(window_size=74, start_byte=0xA5, end_byte=0x5A)
+    decoder = StructDecoder(data_keys=data_keys, packet_format="<dddddddii?????xxx")
 
     # Start serial manager and subscriber
     server = SerialUpdateServer(
